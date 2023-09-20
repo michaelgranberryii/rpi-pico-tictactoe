@@ -1,1 +1,3 @@
-
+software/build/*
+!software/build/.keep
+.vscode/
