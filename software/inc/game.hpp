@@ -43,6 +43,7 @@ void select_position();
 void enter_position();
 void reset_game();
 void player_won();
+void tie_game();
 
 void board_position();
 bool is_position_clear(uint8_t row, uint8_t col);
@@ -50,6 +51,7 @@ void mark_position(uint8_t row, uint8_t col);
 bool check_for_win();
 bool check_for_tie();
 
+void update_select_position();
 void print_board();
 void print_player_turn();
 void print_winner();

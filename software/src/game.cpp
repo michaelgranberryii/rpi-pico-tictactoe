@@ -6,7 +6,6 @@
 
 #include "inc/game.hpp"
 
-bool game_over = false;
 bool gameover = false;
 bool is_board_printed = true;
 bool winner = false;
@@ -14,6 +13,8 @@ char current_player = 'X';
 int btn_press_count;
 int8_t row;
 int8_t col;
+int8_t prev_row;
+int8_t prev_col;
 uint8_t number_of_moves = 0;
 uint8_t led_state = 0;
 
@@ -73,13 +74,20 @@ void init_game() {
     set_is_board_printed();
     print_board();
     print_player_turn();
+    printf("Press button 1 to select a position ---> #.\n");
+    printf("Press button 2 to enter a position.\n");
     multicore_fifo_push_blocking(get_led_state());
 }
 
 void select_position() {
-    print_board();
-    print_player_turn();
     board_position();
+    update_select_position();
+    print_board();
+    btn_press_count++;
+    print_player_turn();
+    printf("Press button 1 to select a position ---> #.\n");
+    // printf("Row: %d, Col: %d\n", row, col);
+    printf("Press button 2 to enter a position.\n");
 }
 
 void enter_position() {
@@ -97,8 +105,8 @@ void enter_position() {
         }
         // check for a tie
         else if (check_for_tie()) {
-            player_won();
             led_state = 4;
+            tie_game();
             winner = true;
         }
         else {
@@ -107,6 +115,8 @@ void enter_position() {
             led_state = (current_player == X ) ? 0 : 1;
             print_board();
             print_player_turn();
+            printf("Press button 1 to select a position ---> #.\n");
+            printf("Press button 2 to enter a position.\n");
             multicore_fifo_push_blocking(get_led_state());
         }
     } else {
@@ -130,6 +140,7 @@ bool check_for_win(){
                     is_match = is_match && ((board[i][j] == current_player) ? true : false);
                 }
                 if (is_match) {
+                    printf("row win\n");
                     break;
                 }
             }
@@ -146,6 +157,7 @@ bool check_for_win(){
                     is_match = is_match && ((board[j][i] == current_player) ? true : false);
                 }
                 if (is_match) {
+                    printf("col win\n");
                     break;
                 }
             }
@@ -156,6 +168,7 @@ bool check_for_win(){
             is_match = false;
             if ((board[0][0] == current_player) && (board[1][1] == current_player) && (board[2][2] == current_player)) {
                 is_match = true;
+                printf("man win\n");
             } 
             break;
 
@@ -164,6 +177,7 @@ bool check_for_win(){
             is_match = false;
             if ((board[0][2] == current_player) && (board[1][1] == current_player) && (board[2][0] == current_player)) {
                 is_match = true;
+                printf("min win\n");
             }
             break;
 
@@ -173,6 +187,7 @@ bool check_for_win(){
             break;
         }
         if (is_match) {
+            printf("break is_match\n");
             break;
         }
     }
@@ -187,7 +202,7 @@ bool check_for_tie() {
 
 // check position
 bool is_position_clear(uint8_t row, uint8_t col) {
-    if (board[row][col] == ' ') {
+    if (board[row][col] == '#') {
         return true;
     } else {
         return false;
@@ -197,6 +212,14 @@ bool is_position_clear(uint8_t row, uint8_t col) {
 void player_won() {
     print_board();
     printf("Player %c won!\n", current_player);
+    printf("Press button 3 to reset game.\n");
+    set_gameover(true);
+    multicore_fifo_push_blocking(get_led_state());
+}
+
+void tie_game() {
+    print_board();
+    printf("Tie game!\n");
     printf("Press button 3 to reset game.\n");
     set_gameover(true);
     multicore_fifo_push_blocking(get_led_state());
@@ -227,21 +250,42 @@ void reset_game() {
     number_of_moves = 0;
     reset_row_col();
     set_gameover(false);
+    current_player = (current_player == X ) ? O : X;
     led_state = (current_player == X ) ? 0 : 1;
     print_player_turn();
+    printf("Press button 1 to select a position ---> #.\n");
+    printf("Press button 2 to enter a position.\n");
     multicore_fifo_push_blocking(get_led_state());
 }
 
 void board_position() {
-    if (btn_press_count == 9) {
-        reset_row_col();
+    prev_row = row;
+    prev_col = col;
+    printf("prev_row: %d, prev_col: %d\n", prev_row, prev_col);
+    bool is_not_empty = true;
+    while (is_not_empty) {
+        if (btn_press_count == 9) {
+            reset_row_col();
+        }
+        col = btn_press_count % board_size;
+        if ((btn_press_count % board_size) == 0) {
+            row++;
+        }
+
+        if (board[row][col] == ' ') {
+            board[row][col] = '#';
+            break;
+        }
+        btn_press_count++;
     }
-    col = btn_press_count % board_size;
-    if ((btn_press_count % board_size) == 0) {
-        row++;
+
+}
+
+void update_select_position() {
+    if (prev_row != -1) {
+        board[prev_row][prev_col] = ' ';
     }
-    printf("Row: %d, Col: %d\n", row, col);
-    btn_press_count++;
+    
 }
 
 bool set_gameover(bool gameover_arg) {
