@@ -9,6 +9,7 @@
 #include "inc/game.hpp"
 #include <iostream>
 
+// GPIO pin numbers
 const uint8_t BTN1_PIN = 18;
 const uint8_t BTN2_PIN = 17;
 const uint8_t BTN3_PIN = 16;
@@ -41,7 +42,7 @@ void core1_entry() {
 int main() {
     stdio_init_all();
     multicore_launch_core1(core1_entry);
-    sleep_ms(1000);
+    sleep_ms(1000); // If I don't delay my program initially, I won't see the board print at the start of the game. It's weird.
 
     // configure gpio pins
     gpio_config my_gpio[number_of_gpio] = {

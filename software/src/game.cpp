@@ -6,6 +6,7 @@
 
 #include "inc/game.hpp"
 
+// Vars
 bool gameover = false;
 bool is_board_printed = true;
 bool winner = false;
@@ -18,13 +19,14 @@ int8_t prev_col;
 uint8_t number_of_moves = 0;
 uint8_t led_state = 0;
 
+// Board array
 char board[board_size][board_size] = {
         {clear_space, clear_space, clear_space},
         {clear_space, clear_space, clear_space},
         {clear_space, clear_space, clear_space}
     };
 
-
+// Configures gpio array structure with gpio pin numbers and pin direction
 void init_gpio(gpio_config *gpio) {
     for (int i = 0; i < number_of_gpio; i++)
     {
@@ -33,6 +35,7 @@ void init_gpio(gpio_config *gpio) {
     }
 }
 
+// Sets button struct atributes
 void init_btn (btn *btn) {
     for (int i = 0; i < number_of_btns; i++)
     {
@@ -69,6 +72,7 @@ uint8_t poll(uint8_t btn_pin) {
     return state; // return gpio pin value
 }
 
+// Called when the game first starts
 void init_game() {
     reset_row_col();
     set_is_board_printed();
@@ -79,6 +83,7 @@ void init_game() {
     multicore_fifo_push_blocking(get_led_state());
 }
 
+// Called when button 1 is pressed
 void select_position() {
     board_position();
     update_select_position();
@@ -90,10 +95,11 @@ void select_position() {
     printf("Press button 2 to enter a position.\n");
 }
 
+// Called when button 2 is pressed
 void enter_position() {
-    number_of_moves++;
     // check position
     if (is_position_clear(row, col)) {
+        number_of_moves++;
         // mark position
         mark_position(row, col);
         reset_row_col();
@@ -120,11 +126,30 @@ void enter_position() {
             multicore_fifo_push_blocking(get_led_state());
         }
     } else {
-        printf("Position is already taken!!!!!!\n");
+        printf("You need to select a position... Press button 1 to start selecting!\n");
     }
 }
 
-// check for a win
+// Called when button 3 is pressed
+void reset_game() {
+    for (uint8_t i = 0; i < board_size; i++) {
+        for (uint8_t j = 0; j < board_size; j++) {
+            board[i][j] = clear_space;
+        }
+    }
+    print_board();
+    number_of_moves = 0;
+    reset_row_col();
+    set_gameover(false);
+    current_player = (current_player == X ) ? O : X;
+    led_state = (current_player == X ) ? 0 : 1;
+    print_player_turn();
+    printf("Press button 1 to select a position ---> #.\n");
+    printf("Press button 2 to enter a position.\n");
+    multicore_fifo_push_blocking(get_led_state());
+}
+
+// Check for a win
 bool check_for_win(){
     bool is_match;
     for (u_int8_t i = 0; i <= board_size; i++) {
@@ -193,14 +218,15 @@ bool check_for_win(){
     }
     return is_match;
 }
-    
+
+// Check for a tie
 bool check_for_tie() {
     bool is_tie = false;
     is_tie = (number_of_moves == (board_size*board_size)) ? true : false;
     return is_tie;
 }
 
-// check position
+// Check if position is clear
 bool is_position_clear(uint8_t row, uint8_t col) {
     if (board[row][col] == '#') {
         return true;
@@ -209,6 +235,7 @@ bool is_position_clear(uint8_t row, uint8_t col) {
     } 
 }
 
+// Called if player won
 void player_won() {
     print_board();
     printf("Player %c won!\n", current_player);
@@ -217,6 +244,7 @@ void player_won() {
     multicore_fifo_push_blocking(get_led_state());
 }
 
+// Called if tie game
 void tie_game() {
     print_board();
     printf("Tie game!\n");
@@ -225,11 +253,12 @@ void tie_game() {
     multicore_fifo_push_blocking(get_led_state());
 }
 
-// makr position
+// Mark position
 void mark_position(uint8_t row, uint8_t col) {
     board[row][col] = current_player;
 }
 
+// Prints tic-tac-toe board
 void print_board() {
     // printf("\e[1;1H\e[23]");
     printf("\033[H\033[J"); 
@@ -240,24 +269,7 @@ void print_board() {
     printf(" %c | %c | %c \n", board[2][0], board[2][1],board[2][2]);
 }
 
-void reset_game() {
-    for (uint8_t i = 0; i < board_size; i++) {
-        for (uint8_t j = 0; j < board_size; j++) {
-            board[i][j] = clear_space;
-        }
-    }
-    print_board();
-    number_of_moves = 0;
-    reset_row_col();
-    set_gameover(false);
-    current_player = (current_player == X ) ? O : X;
-    led_state = (current_player == X ) ? 0 : 1;
-    print_player_turn();
-    printf("Press button 1 to select a position ---> #.\n");
-    printf("Press button 2 to enter a position.\n");
-    multicore_fifo_push_blocking(get_led_state());
-}
-
+// Only selects unoccupied positions
 void board_position() {
     prev_row = row;
     prev_col = col;
@@ -281,6 +293,7 @@ void board_position() {
 
 }
 
+// Updates previously selected row
 void update_select_position() {
     if (prev_row != -1) {
         board[prev_row][prev_col] = ' ';
@@ -288,38 +301,46 @@ void update_select_position() {
     
 }
 
+// Sets gameover bool
 bool set_gameover(bool gameover_arg) {
     gameover = gameover_arg;
     return gameover;
 }
 
+// Gets gameover bool
 bool get_gameover() {
     return gameover;
 }
 
+// Sets (toggles) is_board_printed bool
 bool set_is_board_printed() {
     is_board_printed = (is_board_printed == true) ? false : true;
     return is_board_printed;
 }
 
+// Gets is_board_printed bool
 bool get_is_board_printed() {
     return is_board_printed;
 }
 
+// Gets led_state value
 uint8_t get_led_state() {
     return led_state;
 }
 
+// Resets row and col variables
 void reset_row_col() {
     row = -1;
     col = 0;
     btn_press_count = 0;
 }
 
+// Prints whose turn it is
 void print_player_turn() {
     printf("It's player %c's turn.\n", current_player);
 }
 
+// Controls LED pattern
 void led_pattern(uint8_t sel, led *led) {
         switch (sel)
         {

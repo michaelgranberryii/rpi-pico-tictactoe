@@ -20,7 +20,7 @@ endif()
 pico_sdk_init()
 
 add_executable(${PROJECT_NAME}
-    main.cpp
+    src/main.cpp
     ../src/game.cpp
 )
 
