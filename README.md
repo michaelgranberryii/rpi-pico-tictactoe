@@ -13,6 +13,7 @@ This project uses a Raspberry Pi Pico to implement a Tic-Tac-Toe game, where the
 * [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/)
 * Push Buttons
 * Breadboard
+* LEDs
 
 ### Software
 
